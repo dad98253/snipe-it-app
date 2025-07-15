@@ -10,22 +10,45 @@ typedef struct {
     const char *value;
 } Header;
 
+FILE *fp;
+
 extern char *http_get(const char *url, const Header *headers, size_t header_count);
 
 int main(void) {
     
     const char *url = URL;
+    const char *urla = URLA;
     cJSON *fields;
     char * hostname = NULL;
     char * pchar = NULL;
+    int id = 0;
+    char ip[200],MAC[300];
 
     Header headers[] = {
         {"Accept", "application/json"},
         {"Content-Type", "application/json"},
         {"authorization", APIKEY }
     };
+    char recnum[10];
+    char * urlc;
+    char * urlk;
+    char *response = NULL;
 
-    char *response = http_get(url, headers, sizeof(headers)/sizeof(headers[0]));
+    urlc = (char*)malloc(strlen(url)+20);
+    urlk = (char*)malloc(strlen(urla)+20);
+    fp = fopen("database.txt", "w");
+    fprintf(fp,"id,hostname,ip,MAC,url\n");
+
+    for (int i=1;i<64000;i++) {
+    	sprintf(recnum,"%i",i);
+    	strcpy(urlc,url);
+    	strcat(urlc,recnum);
+    	strcpy(urlk,urla);
+    	strcat(urlk,recnum);
+
+    	response = NULL;
+    	id = 0;
+    response = http_get(urlc, headers, 3);
 
     if (!response) {
           fprintf(stderr, "Request failed or no response.\n");
@@ -45,6 +68,7 @@ int main(void) {
 	  cJSON *number_item = cJSON_GetObjectItemCaseSensitive(json, "id");
 	  if (cJSON_IsNumber(number_item)) {
 		  printf("Value of 'id': %i\n", number_item->valueint);
+		  id = number_item->valueint;
 	  } else {
 		  fprintf(stderr, "Error: 'id' key not found or is not a number.\n");
 	  }
@@ -105,6 +129,7 @@ int main(void) {
                                      fields = cJSON_GetObjectItem(number_item, "value");
                                      if (cJSON_IsString(fields) && (fields->valuestring != NULL)) {
                                          printf("IP Address: %s\n", fields->valuestring);
+                                         sprintf(ip,"%s",fields->valuestring);
                                      }
                                  }
                             }
@@ -128,6 +153,7 @@ int main(void) {
                                      fields = cJSON_GetObjectItem(number_item, "value");
                                      if (cJSON_IsString(fields) && (fields->valuestring != NULL)) {
                                          printf("MAC Address: %s\n", fields->valuestring);
+                                         sprintf(MAC,"%s",fields->valuestring);
                                      }
                                  }
                             }
@@ -137,22 +163,18 @@ int main(void) {
                     }
                 }
          }
-//          if (cJSON_IsString(number_item) && (number_item->valuestring != NULL)) {
-//              printf("Custom Fields: %s\n", number_item->valuestring);
-//          } else {
-//              fprintf(stderr, "Error: 'Custom Fields' key not found or is not a string.\n");
-//          }
 
+         fprintf(fp,"%i,%s,%s,%s,%s\n",id,hostname,ip,MAC,urlk);
 
 
 
 	  // Cleanup
 	  cJSON_Delete(json);
-//	  cJSON_Delete(fields);
-//	  cJSON_Delete(number_item);
 	  free(response);
 	  free(hostname);
+    }
 
+    fclose(fp);
     return 0;
 }
 
