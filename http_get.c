@@ -78,7 +78,7 @@ char *http_get(const char *url, const Header *headers, size_t header_count) {
             continue;
         }
 
-        char header_line[1024];
+        char header_line[10024];
         if (snprintf(header_line, sizeof(header_line), "%s: %s", headers[i].key, headers[i].value) >= (int)sizeof(header_line)) {
             fprintf(stderr, "Warning: Header too long, skipping: %s\n", headers[i].key);
             continue;
